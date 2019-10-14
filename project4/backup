@@ -1,0 +1,89 @@
+#!/bin/bash
+
+function BACKUP_USAGE
+{
+echo Usage: backup [options] source_files
+}
+function BACKUP_LIST 
+{
+echo =============================================
+ls -l -R ~/.backup
+echo =============================================
+}
+function BACKUP_STATS
+{
+echo =============================================
+echo Number of files/directories in ./backup:
+ls -1q ~/.backup | wc -l
+echo Storage used by each file in ./backup:
+ls -l -s -h -R ~/.backup 
+stat -c %s%n ~/.backup
+echo =============================================
+}
+
+if [ -d ~/.backup ]; then
+	echo BACKUP DIRECTORY EXISTS
+else
+	echo BACKUP DIRECTORY DID NOT EXIST - CREATED
+	mkdir ~/.backup
+fi
+
+if [ "$#" -eq "0" ]; then
+	BACKUP_USAGE
+	exit
+fi
+
+help_needed="1"
+list="1"
+stats="1"
+liststats="1"
+statslist="1"
+
+for iter in "$@"; do
+	if [ "$iter" == '-l' ]; then
+		list="0"
+	elif [ "$iter" == '-n' ]; then
+		stats="0"
+	elif [ "$iter" == '-ln' ]; then
+		liststats="0"
+	elif [ "$iter" == '-nl' ]; then
+		statslist="0"
+	elif [ "$iter" == '--help' ]; then
+		help_needed="0"
+	elif echo $iter | grep -- ^-.; then
+		echo backup: invalid option
+	else
+		if [ $iter ]; then
+			cp -r -u $iter ~/.backup
+			echo Backed up: $iter
+		else
+			echo File/Directory does not exist: $iter
+		fi
+		#echo PROCESS FILE
+	fi
+done
+
+if [ "$list" == "0" ]; then
+	BACKUP_LIST
+fi
+if [ "$stats" == "0" ]; then
+	BACKUP_STATS
+fi
+if [ "$liststats" == "0" ]; then
+	BACKUP_LIST
+	BACKUP_STATS
+fi
+if [ "$statslist" == "0" ]; then
+	BACKUP_STATS
+	BACKUP_LIST
+fi
+if [ "$help_needed" == "0" ]; then
+	echo
+	BACKUP_USAGE
+       	echo
+	echo Backs up source file parameters to ~/.backup
+	echo -l: lists all files in ~./backup
+	echo -n: displays file count, file sizes
+	echo --help: displays this help
+	echo
+fi
